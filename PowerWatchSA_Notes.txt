@@ -11,3 +11,15 @@ Open Git bash in VS code terminal
 
 3. **Pull the latest changes**  
    git pull origin main
+
+
+
+
+Push your changes back to github
+
+Make sure you saved your files
+
+1. git status
+2. git add .
+3. git commit -m "Your changes"
+4. git push origin main
