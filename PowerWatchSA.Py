@@ -24,7 +24,7 @@ CommunityMembers = {
              "Boksburg","Germiston","Germiston","Benoni","Boksburg"],
     "Block": [4,7,7,2,4,4,2,2,7,4],
     "Generator": ["No","No","Yes","No","No","No","No","Yes","No","No"],
-    "Solar": ["No","No","No","No","No","No","Yes","No","No","No"],
+    "Solar": [False,False,False,False,False,False,True,False,False,False],
     "Vulnerable": ["Oxygen machine","None","None","None","None",
                    "None","None","Medical fridges","None","Dialysis patient"]
 }
@@ -77,7 +77,7 @@ def calculate_overrun(start_time,end_time,actual_start, actual_end):
     overrun = (end_time - start_time).total_seconds() / 60
     return overrun# log_outage()
 
-
+# Add log entry to OutageLog
 def log_outage(log_id, date, area, block, stage, scheduled_start, scheduled_end, actual_start, actual_end, monitor):
     OutageLog["LogID"].append(log_id)
     OutageLog["Date"].append(date)
@@ -91,14 +91,3 @@ def log_outage(log_id, date, area, block, stage, scheduled_start, scheduled_end,
     OutageLog["Overrun"].append(calculate_overrun(scheduled_start, scheduled_end, actual_start, actual_end))
     OutageLog["Monitor"].append(monitor)
     return "Outage logged successfully."
-
-
-
-print(f"Community Member ID: {CommunityMembers['ID']}")
-print(f"Name: {CommunityMembers['Name']}")
-print(f"Type: {CommunityMembers['Type']}")
-print(f"Area: {CommunityMembers['Area']}")
-print(f"Block: {CommunityMembers['Block']}")
-print(f"Generator: {CommunityMembers['Generator']}")
-print(f"Solar: {CommunityMembers['Solar']}")
-print(f"Vulnerable: {CommunityMembers['Vulnerable']}")
