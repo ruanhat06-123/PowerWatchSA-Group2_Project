@@ -75,6 +75,13 @@ ImpactReports = {
 
 #Functions for PowerWatchSA
 
+def create_area_list():
+    area_list = []
+    for area in CommunityMembers["Area"]:
+        if area not in area_list:
+            area_list.append(area)
+    return area_list
+
 # Last Log ID
 def last_id(outage_logs):
     return outage_logs["LogID"][-1]
@@ -206,22 +213,22 @@ while True:
     print("5. Generate complaint report")
     print("6. Exit")
     
-    # User Choise
     choice = input("Enter choice: ")
 
-    # Outputs for user inputs
     if choice == "1":
-        log_id = input("Enter log ID: ")
         date = input("Enter date (YYYY-MM-DD): ")
-        area = input("Enter area: ")
-        block = int(input("Enter block: "))
+        for i in range(len(create_area_list())):
+            print(f"{i+1}. {create_area_list()[i]}")
+        area = create_area_list()[int(input("Enter area number: "))-1]
         stage = int(input("Enter stage (1-6): "))
+        block = int(input(f"Enter block ({Stages['Blocks'][stage-1]}): "))
         scheduled_start = input("Enter scheduled start time (HH:MM): ")
         scheduled_end = input("Enter scheduled end time (HH:MM): ")
         actual_start = input("Enter actual start time (HH:MM): ")
         actual_end = input("Enter actual end time (HH:MM): ")
         monitor = input("Enter monitor name: ")
-        log_outage(log_id, date, area, block, stage, scheduled_start, scheduled_end,
+        log_outage(date, area, block, stage,
+                   scheduled_start, scheduled_end,
                    actual_start, actual_end, monitor)
         print("Outage logged successfully.")
     elif choice == "2":
