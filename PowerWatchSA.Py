@@ -69,3 +69,18 @@ ImpactReports = {
     ],
     "Loss": ["N/A","N/A",800,1200,"N/A",1500,"N/A"]
 }
+
+
+#Functions for PowerWatchSA
+# log_outage()
+def log_outage(log_id, date, area, block, stage, scheduled_start, scheduled_end, actual_start, actual_end, monitor):
+    OutageLog["LogID"].append(log_id)
+    OutageLog["Date"].append(date)
+    OutageLog["Area"].append(area)
+    OutageLog["Block"].append(block)
+    OutageLog["Stage"].append(stage)
+    OutageLog["ScheduledStart"].append(scheduled_start)
+    OutageLog["ScheduledEnd"].append(scheduled_end)
+    OutageLog["ActualStart"].append(actual_start)
+    OutageLog["ActualEnd"].append(actual_end)
+    OutageLog["Monitor"].append(monitor)
