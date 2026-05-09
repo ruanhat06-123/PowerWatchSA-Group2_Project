@@ -90,16 +90,10 @@ def count_logs(outage_logs):
     return len(outage_logs["LogID"])
 
 # Automatically generate the next Log ID
-def generate_log_id(log_count):
-    # Get the last log ID in the list
-    last_id = OutageLog["LogID"][-1]   # e.g. "LOG-010"
-    
-    # Extract the number part and increment
+def generate_log_id(outage_logs):
+    last_id = outage_logs["LogID"][-1]   # e.g. "LOG-010"
     number = int(last_id.split("-")[1])
-    new_number = number + 1
-    
-    # Format with leading zeros (e.g. LOG-011)
-    return f"LOG-{new_number:03d}"
+    return f"LOG-{number+1:03d}"
 
 # Calculate overrun time in minutes
 def calculate_overrun(scheduled_start, scheduled_end, actual_start, actual_end):
@@ -122,26 +116,34 @@ def to_time(time_str):
     return datetime.strptime(time_str, "%H:%M")
 
 # Add log entry to OutageLog
-def log_outage(log_id, date, area, block, stage,
+def log_outage(date, area, block, stage,
                scheduled_start, scheduled_end,
                actual_start, actual_end, monitor):
+    # Auto-generate log ID
+    log_id = generate_log_id(OutageLog)
+
     # Use the new calculate_overrun with start + end times
     overrun = calculate_overrun(scheduled_start, scheduled_end,
                                 actual_start, actual_end)
 
     OutageLog["LogID"].append(log_id)
-    OutageLog["Date"].append(date)
-    OutageLog["Area"].append(area)
+    OutageLog["Date"].append(date.strip())
+    OutageLog["Area"].append(area.strip().title())  # standardise
     OutageLog["Block"].append(block)
     OutageLog["Stage"].append(stage)
-    OutageLog["ScheduledStart"].append(scheduled_start)
-    OutageLog["ScheduledEnd"].append(scheduled_end)
-    OutageLog["ActualStart"].append(actual_start)
-    OutageLog["ActualEnd"].append(actual_end)
+    OutageLog["ScheduledStart"].append(scheduled_start.strip())
+    OutageLog["ScheduledEnd"].append(scheduled_end.strip())
+    OutageLog["ActualStart"].append(actual_start.strip())
+    OutageLog["ActualEnd"].append(actual_end.strip())
     OutageLog["Overrun"].append(overrun)
-    OutageLog["Monitor"].append(monitor)
+    OutageLog["Monitor"].append(monitor.strip().title())
 
-    return f"Outage logged successfully. Overrun = {overrun} minutes."
+    print(f"Outage logged successfully with ID {log_id}. Overrun = {overrun} minutes.")
+
+    # Immediately flag vulnerable alerts
+    alerts = flag_vulnerable_alerts(area, block, overrun)
+    for alert in alerts:
+        print(alert)
 
 
 # Generate alerts for vulnerable members when an overrun occurs
@@ -166,13 +168,20 @@ def get_block_summary(area, block, outage_logs):
         "TotalOverrunMinutes": 0
     }
     for i in range(len(outage_logs["LogID"])):
-        if outage_logs["Area"][i] == area and outage_logs["Block"][i] == block:
-            overrun = outage_logs["Overrun"][i]
-            summary["TotalOverrunMinutes"] += overrun
-            if overrun > 30:
+        if outage_logs["Area"][i].strip().title() == area.strip().title() and outage_logs["Block"][i] == block:
+            sched_start = to_time(outage_logs["ScheduledStart"][i])
+            sched_end = to_time(outage_logs["ScheduledEnd"][i])
+            actual_start = to_time(outage_logs["ActualStart"][i])
+            actual_end = to_time(outage_logs["ActualEnd"][i])
+
+            sched_duration = (sched_end - sched_start).total_seconds() / 3600
+            actual_duration = (actual_end - actual_start).total_seconds() / 3600
+
+            summary["ScheduledHours"] += sched_duration
+            summary["ActualHours"] += actual_duration
+            summary["TotalOverrunMinutes"] += outage_logs["Overrun"][i]
+            if outage_logs["Overrun"][i] > 30:
                 summary["Overruns"] += 1
-            # Hours can be estimated from scheduled vs actual times if needed
-            # For now, just count overruns and minutes
     return summary
 
 
@@ -216,36 +225,52 @@ while True:
     choice = input("Enter choice: ")
 
     if choice == "1":
-        date = input("Enter date (YYYY-MM-DD): ")
+        date = input("Enter date (YYYY-MM-DD): ").strip()
+        if not date: 
+            print("Date cannot be blank."); continue
+
         for i in range(len(create_area_list())):
             print(f"{i+1}. {create_area_list()[i]}")
-        area = create_area_list()[int(input("Enter area number: "))-1]
-        stage = int(input("Enter stage (1-6): "))
-        block = int(input(f"Enter block ({Stages['Blocks'][stage-1]}): "))
-        scheduled_start = input("Enter scheduled start time (HH:MM): ")
-        scheduled_end = input("Enter scheduled end time (HH:MM): ")
-        actual_start = input("Enter actual start time (HH:MM): ")
-        actual_end = input("Enter actual end time (HH:MM): ")
-        monitor = input("Enter monitor name: ")
-        log_outage(date, area, block, stage,
-                   scheduled_start, scheduled_end,
-                   actual_start, actual_end, monitor)
-        print("Outage logged successfully.")
+        area = create_area_list()[int(input("Enter area number: "))-1].strip().title()
+
+        stage = int(input("Enter stage (1-6): ").strip())
+        block = int(input(f"Enter block ({Stages['Blocks'][stage-1]}): ").strip())
+
+        scheduled_start = input("Enter scheduled start time (HH:MM): ").strip()
+        scheduled_end = input("Enter scheduled end time (HH:MM): ").strip()
+        actual_start = input("Enter actual start time (HH:MM): ").strip()
+        actual_end = input("Enter actual end time (HH:MM): ").strip()
+        monitor = input("Enter monitor name: ").strip().title()
+
+        if not all([scheduled_start, scheduled_end, actual_start, actual_end, monitor]):
+            print("All fields must be filled."); continue
+
+        log_outage(date, area, block, stage,scheduled_start, scheduled_end,actual_start, actual_end, monitor)
     elif choice == "2":
-        print("Flagged logs (overruns >30 mins):")
+        print("\n=== Flagged Logs (Overruns > 30 mins) ===")
         for i in range(len(OutageLog["LogID"])):
             if OutageLog["Overrun"][i] > 30:
-                print(f"{OutageLog['LogID'][i]} in {OutageLog['Area'][i]} Block {OutageLog['Block'][i]} "
-                      f"overran by {OutageLog['Overrun'][i]} mins")
+                print(f"[{OutageLog['LogID'][i]}] Area: {OutageLog['Area'][i]}, Block: {OutageLog['Block'][i]}, "
+                      f"Overrun: {OutageLog['Overrun'][i]} mins, Monitor: {OutageLog['Monitor'][i]}")
+
     elif choice == "3":
-        area = input("Enter area: ")
-        block = int(input("Enter block: "))
+        area = input("Enter area: ").strip().title()
+        block = int(input("Enter block: ").strip())
         summary = get_block_summary(area, block, OutageLog)
-        print(summary)
+        print("\n=== Block Summary ===")
+        print(f"Area: {area}, Block: {block}")
+        print(f"Scheduled Hours Off: {summary['ScheduledHours']:.2f} hrs")
+        print(f"Actual Hours Off: {summary['ActualHours']:.2f} hrs")
+        print(f"Number of Overruns: {summary['Overruns']}")
+        print(f"Total Overrun Time: {summary['TotalOverrunMinutes']} mins")
+
+
     elif choice == "4":
         print(f"Total financial loss: R{calculate_financial_loss(ImpactReports)}")
     elif choice == "5":
+        print("\n=== Complaint Report ===")
         print(generate_complaint_report(OutageLog, ImpactReports, CommunityMembers))
+
     elif choice == "6":
         print("Exiting PowerWatchSA...")
         break
