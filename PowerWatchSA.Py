@@ -72,7 +72,12 @@ ImpactReports = {
 
 
 #Functions for PowerWatchSA
-# log_outage()
+# Calculate overrun time in minutes
+def calculate_overrun(start_time,end_time,actual_start, actual_end):
+    overrun = (end_time - start_time).total_seconds() / 60
+    return overrun# log_outage()
+
+
 def log_outage(log_id, date, area, block, stage, scheduled_start, scheduled_end, actual_start, actual_end, monitor):
     OutageLog["LogID"].append(log_id)
     OutageLog["Date"].append(date)
@@ -83,4 +88,17 @@ def log_outage(log_id, date, area, block, stage, scheduled_start, scheduled_end,
     OutageLog["ScheduledEnd"].append(scheduled_end)
     OutageLog["ActualStart"].append(actual_start)
     OutageLog["ActualEnd"].append(actual_end)
+    OutageLog["Overrun"].append(calculate_overrun(scheduled_start, scheduled_end, actual_start, actual_end))
     OutageLog["Monitor"].append(monitor)
+    return "Outage logged successfully."
+
+
+
+print(f"Community Member ID: {CommunityMembers['ID']}")
+print(f"Name: {CommunityMembers['Name']}")
+print(f"Type: {CommunityMembers['Type']}")
+print(f"Area: {CommunityMembers['Area']}")
+print(f"Block: {CommunityMembers['Block']}")
+print(f"Generator: {CommunityMembers['Generator']}")
+print(f"Solar: {CommunityMembers['Solar']}")
+print(f"Vulnerable: {CommunityMembers['Vulnerable']}")
