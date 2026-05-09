@@ -1,0 +1,13 @@
+Pulling Code(Make sure you have git bash installed)
+
+Open Git bash in VS code terminal
+
+1. **Make sure you’re inside your project folder**  
+   cd path/to/your/project
+
+
+2. **Check your current branch**  
+   git branch
+
+3. **Pull the latest changes**  
+   git pull origin main
