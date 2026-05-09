@@ -1,5 +1,6 @@
 Pulling Code(Make sure you have git bash installed)
 
+
 Open Git bash in VS code terminal
 
 1. **Make sure you’re inside your project folder**  
