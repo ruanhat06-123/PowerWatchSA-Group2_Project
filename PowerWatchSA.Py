@@ -115,20 +115,16 @@ def calculate_overrun(scheduled_start, scheduled_end, actual_start, actual_end):
 def to_time(time_str):
     return datetime.strptime(time_str, "%H:%M")
 
-# Add log entry to OutageLog
+#Add a new outage log
 def log_outage(date, area, block, stage,
-               scheduled_start, scheduled_end,
-               actual_start, actual_end, monitor):
-    # Auto-generate log ID
+    scheduled_start, scheduled_end,
+    actual_start, actual_end, monitor):
     log_id = generate_log_id(OutageLog)
-
-    # Use the new calculate_overrun with start + end times
-    overrun = calculate_overrun(scheduled_start, scheduled_end,
-                                actual_start, actual_end)
+    overrun = calculate_overrun(scheduled_start, scheduled_end, actual_start, actual_end)
 
     OutageLog["LogID"].append(log_id)
     OutageLog["Date"].append(date.strip())
-    OutageLog["Area"].append(area.strip().title())  # standardise
+    OutageLog["Area"].append(area.strip().title())
     OutageLog["Block"].append(block)
     OutageLog["Stage"].append(stage)
     OutageLog["ScheduledStart"].append(scheduled_start.strip())
@@ -140,10 +136,15 @@ def log_outage(date, area, block, stage,
 
     print(f"Outage logged successfully with ID {log_id}. Overrun = {overrun} minutes.")
 
-    # Immediately flag vulnerable alerts
+    # Flag vulnerable alerts
     alerts = flag_vulnerable_alerts(area, block, overrun)
     for alert in alerts:
         print(alert)
+
+    # Auto-log impact reports if overrun > 30
+    if overrun > 30:
+        log_impact_report(log_id, area, block, ImpactReports, CommunityMembers)
+
 
 
 # Generate alerts for vulnerable members when an overrun occurs
@@ -315,6 +316,27 @@ def select_and_view_impact(outage_logs, impact_reports, community_members):
 
     if not found:
         print("No impact report found for this log.")
+
+# Automatically log an impact report when an outage affects vulnerable members
+def log_impact_report(log_id, area, block, impact_reports, community_members):
+    for i in range(len(community_members["ID"])):
+        if community_members["Area"][i].strip().title() == area.strip().title() and community_members["Block"][i] == block:
+            if community_members["Vulnerable"][i] != "None":
+                # Auto-generate Impact ID
+                last_id = impact_reports["ImpactID"][-1]
+                number = int(last_id.split("-")[1])
+                new_id = f"IMP-{number+1:03d}"
+
+                # Append new impact report
+                impact_reports["ImpactID"].append(new_id)
+                impact_reports["LogID"].append(log_id)
+                impact_reports["MemberID"].append(community_members["ID"][i])
+                impact_reports["ImpactType"].append("Medical")  # default type for vulnerable
+                impact_reports["Description"].append(f"{community_members['Name'][i]} affected due to {community_members['Vulnerable'][i]}")
+                impact_reports["Loss"].append("N/A")
+
+                print(f"Impact logged: {community_members['Name'][i]} - {community_members['Vulnerable'][i]}")
+
 
 
 
