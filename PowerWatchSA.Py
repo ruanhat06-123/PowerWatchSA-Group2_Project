@@ -75,6 +75,7 @@ ImpactReports = {
 
 #Functions for PowerWatchSA
 
+# Create a list of unique areas from the community members data
 def create_area_list():
     area_list = []
     for area in CommunityMembers["Area"]:
