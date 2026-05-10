@@ -160,29 +160,33 @@ def flag_vulnerable_alerts(area, block, overrun_minutes):
 
 
 # Produce a summary of outages for a given block and area
-def get_block_summary(area, block, outage_logs):
-    summary = {
-        "ScheduledHours": 0,
-        "ActualHours": 0,
-        "Overruns": 0,
-        "TotalOverrunMinutes": 0
-    }
+def get_block_summary(area, block, outage_logs, impact_reports, community_members):
+    print(f"\n=== Block Summary for {area.title()}, Block {block} ===")
+
+    # Table header
+    header = f"{'Member':<30} | {'Impact':<60}"
+    print(header)
+    print("-" * len(header))
+
+    found = False
     for i in range(len(outage_logs["LogID"])):
         if outage_logs["Area"][i].strip().title() == area.strip().title() and outage_logs["Block"][i] == block:
-            sched_start = to_time(outage_logs["ScheduledStart"][i])
-            sched_end = to_time(outage_logs["ScheduledEnd"][i])
-            actual_start = to_time(outage_logs["ActualStart"][i])
-            actual_end = to_time(outage_logs["ActualEnd"][i])
-
-            sched_duration = (sched_end - sched_start).total_seconds() / 3600
-            actual_duration = (actual_end - actual_start).total_seconds() / 3600
-
-            summary["ScheduledHours"] += sched_duration
-            summary["ActualHours"] += actual_duration
-            summary["TotalOverrunMinutes"] += outage_logs["Overrun"][i]
             if outage_logs["Overrun"][i] > 30:
-                summary["Overruns"] += 1
-    return summary
+                log_id = outage_logs["LogID"][i]
+
+                # Find linked impacts
+                for j in range(len(impact_reports["LogID"])):
+                    if impact_reports["LogID"][j] == log_id:
+                        found = True
+                        member_id = impact_reports["MemberID"][j]
+                        member_name = community_members["Name"][community_members["ID"].index(member_id)]
+                        description = impact_reports["Description"][j]
+
+                        row = f"{member_name:<30} | {description:<60}"
+                        print(row)
+
+    if not found:
+        print("No affected members found for this block.")
 
 
 # Calculate total financial loss from impact reports
@@ -194,22 +198,128 @@ def calculate_financial_loss(impact_reports):
     return total_loss
 
 
-# Generate a formatted complaint report for overruns >30 mins
+# Generate a formatted complaint report showing only affected members and impacts
 def generate_complaint_report(outage_logs, impact_reports, community_members):
-    report = "Complaint Report:\n"
+    print("\n=== Complaint Report (Affected Members & Impacts) ===")
+
+    # Table header
+    header = f"{'Member':<30} | {'Impact':<100}"
+    print(header)
+    print("-" * len(header))
+
+    found = False
     for i in range(len(outage_logs["LogID"])):
         if outage_logs["Overrun"][i] > 30:
             log_id = outage_logs["LogID"][i]
-            area = outage_logs["Area"][i]
-            block = outage_logs["Block"][i]
-            report += f"\nLog {log_id} in {area}, Block {block} overran by {outage_logs['Overrun'][i]} mins."
-            # Check impacts linked to this outage
+
+            # Find linked impacts
             for j in range(len(impact_reports["LogID"])):
                 if impact_reports["LogID"][j] == log_id:
+                    found = True
                     member_id = impact_reports["MemberID"][j]
                     member_name = community_members["Name"][community_members["ID"].index(member_id)]
-                    report += f"\n - Impact on {member_name}: {impact_reports['Description'][j]}"
-    return report
+                    description = impact_reports["Description"][j]
+
+                    row = f"{member_name:<30} | {description:<100}"
+                    print(row)
+
+    if not found:
+        print("No affected members found for overruns greater than 30 minutes.")
+
+
+
+
+# Print all flagged logs in a table format
+def print_all_flagged_logs(outage_logs):
+    print("\n=== All Flagged Logs (Overruns > 30 mins) ===")
+
+    # Table header
+    header = f"{'Log ID':<10} | {'Date':<12} | {'Area':<12} | {'Block':<6} | {'Stage':<6} | {'Scheduled':<15} | {'Actual':<15} | {'Overrun(mins)':<15} | {'Monitor':<20}"
+    print(header)
+    print("-" * len(header))
+
+    found = False
+    for i in range(len(outage_logs["LogID"])):
+        if outage_logs["Overrun"][i] > 30:
+            found = True
+            scheduled = f"{outage_logs['ScheduledStart'][i]}-{outage_logs['ScheduledEnd'][i]}"
+            actual = f"{outage_logs['ActualStart'][i]}-{outage_logs['ActualEnd'][i]}"
+            row = f"{outage_logs['LogID'][i]:<10} | {outage_logs['Date'][i]:<12} | {outage_logs['Area'][i]:<12} | {outage_logs['Block'][i]:<6} | {outage_logs['Stage'][i]:<6} | {scheduled:<15} | {actual:<15} | {outage_logs['Overrun'][i]:<15} | {outage_logs['Monitor'][i]:<20}"
+            print(row)
+
+    if not found:
+        print("No flagged logs found.")
+
+# View impact report for a specific flagged log
+def view_impact_report(log_id, outage_logs, impact_reports, community_members):
+    print(f"\n=== Impact Report for Log ID {log_id} ===")
+
+    # Table header
+    header = f"{'Member':<30} | {'Impact':<100}"
+    print(header)
+    print("-" * len(header))
+
+    found = False
+    for j in range(len(impact_reports["LogID"])):
+        if impact_reports["LogID"][j] == log_id:
+            found = True
+            member_id = impact_reports["MemberID"][j]
+            member_name = community_members["Name"][community_members["ID"].index(member_id)]
+            description = impact_reports["Description"][j]
+
+            row = f"{member_name:<30} | {description:<100}"
+            print(row)
+
+    if not found:
+        print("No impact report found for that Log ID.")
+
+# Let user select a flagged log ID and view its impact report
+def select_and_view_impact(outage_logs, impact_reports, community_members):
+    # Collect flagged logs
+    flagged_logs = [log_id for i, log_id in enumerate(outage_logs["LogID"]) if outage_logs["Overrun"][i] > 30]
+
+    if not flagged_logs:
+        print("No flagged logs available.")
+        return
+
+    # Show list of flagged logs
+    print("\n=== Select a Flagged Log ===")
+    for idx, log_id in enumerate(flagged_logs, start=1):
+        date = outage_logs["Date"][outage_logs["LogID"].index(log_id)]
+        area = outage_logs["Area"][outage_logs["LogID"].index(log_id)]
+        overrun = outage_logs["Overrun"][outage_logs["LogID"].index(log_id)]
+        print(f"{idx}. {log_id}")
+    # User selects from list
+    choice = input("Enter the number of the log you want to view: ").strip()
+    if not choice.isdigit() or int(choice) < 1 or int(choice) > len(flagged_logs):
+        print("Invalid selection.")
+        return
+
+    selected_log = flagged_logs[int(choice) - 1]
+
+    # Print impact report for selected log
+    print(f"\n=== Impact Report for {selected_log} ===")
+    header = f"{'Member':<30} | {'Impact':<100}"
+    print(header)
+    print("-" * len(header))
+
+    found = False
+    for j in range(len(impact_reports["LogID"])):
+        if impact_reports["LogID"][j] == selected_log:
+            found = True
+            member_id = impact_reports["MemberID"][j]
+            member_name = community_members["Name"][community_members["ID"].index(member_id)]
+            description = impact_reports["Description"][j]
+            row = f"{member_name:<30} | {description:<100}"
+            print(row)
+
+    if not found:
+        print("No impact report found for this log.")
+
+
+
+    
+
 
 
 #Menu
@@ -223,7 +333,8 @@ while True:
     print("6. Exit")
     
     choice = input("Enter choice: ")
-
+    
+    #Log outage
     if choice == "1":
         date = input("Enter date (YYYY-MM-DD): ").strip()
         if not date: 
@@ -246,31 +357,44 @@ while True:
             print("All fields must be filled."); continue
 
         log_outage(date, area, block, stage,scheduled_start, scheduled_end,actual_start, actual_end, monitor)
+
+    # View flagged logs
     elif choice == "2":
-        print("\n=== Flagged Logs (Overruns > 30 mins) ===")
-        for i in range(len(OutageLog["LogID"])):
-            if OutageLog["Overrun"][i] > 30:
-                print(f"[{OutageLog['LogID'][i]}] Area: {OutageLog['Area'][i]}, Block: {OutageLog['Block'][i]}, "
-                      f"Overrun: {OutageLog['Overrun'][i]} mins, Monitor: {OutageLog['Monitor'][i]}")
+        print_all_flagged_logs(OutageLog)
+        print("1. Continue to main menu")
+        print("2. View Impact report for a flagged log")
+        print("3. Exit")
+        choice2 = input("Enter choice: ").strip()
 
+        if choice2 == "1":
+            continue
+        elif choice2 == "2":
+            select_and_view_impact(OutageLog, ImpactReports, CommunityMembers)
+        elif choice2 == "3":
+            print("Exiting PowerWatchSA...")
+            break
+        else:
+            print("Invalid choice, returning to main menu.")
+
+
+    # View block summary
     elif choice == "3":
-        area = input("Enter area: ").strip().title()
+        for i in range(len(create_area_list())):
+            print(f"{i+1}. {create_area_list()[i]}")
+        area = create_area_list()[int(input("Enter area number: "))-1].strip().title()
+
         block = int(input("Enter block: ").strip())
-        summary = get_block_summary(area, block, OutageLog)
-        print("\n=== Block Summary ===")
-        print(f"Area: {area}, Block: {block}")
-        print(f"Scheduled Hours Off: {summary['ScheduledHours']:.2f} hrs")
-        print(f"Actual Hours Off: {summary['ActualHours']:.2f} hrs")
-        print(f"Number of Overruns: {summary['Overruns']}")
-        print(f"Total Overrun Time: {summary['TotalOverrunMinutes']} mins")
+        get_block_summary(area, block, OutageLog, ImpactReports, CommunityMembers)
 
-
+    # View financial losses
     elif choice == "4":
         print(f"Total financial loss: R{calculate_financial_loss(ImpactReports)}")
+    
+    # Generate complaint report
     elif choice == "5":
-        print("\n=== Complaint Report ===")
-        print(generate_complaint_report(OutageLog, ImpactReports, CommunityMembers))
-
+        generate_complaint_report(OutageLog, ImpactReports, CommunityMembers)
+    
+    # Exit
     elif choice == "6":
         print("Exiting PowerWatchSA...")
         break
