@@ -345,81 +345,169 @@ def log_impact_report(log_id, area, block, impact_reports, community_members):
 
 
 
-#Menu
-while True:
-    print("\n--- PowerWatchSA Menu ---")
-    print("1. Log outage")
-    print("2. View flagged logs")
-    print("3. View block summary")
-    print("4. View financial losses")
-    print("5. Generate complaint report")
-    print("6. Exit")
-    
-    choice = input("Enter choice: ")
-    
-    #Log outage
-    if choice == "1":
+# User Interface Functions
+def print_header():
+    print("\n" + "="*80)
+    print(" "*20 + "POWERWATCH SOUTH AFRICA")
+    print(" "*15 + "Loadshedding Impact Monitoring System")
+    print("="*80 + "\n")
+
+def print_main_menu():
+    print("\n" + "-"*80)
+    print("MAIN MENU")
+    print("-"*80)
+    print("1. Log Outage                  - Record a new loadshedding outage event")
+    print("2. View Flagged Logs           - Display outages with overruns > 30 minutes")
+    print("3. View Block Summary          - Check impact summary for a specific block")
+    print("4. View Financial Losses       - Calculate total financial impact")
+    print("5. Generate Complaint Report   - View all affected members and impacts")
+    print("6. Exit                        - Close the application")
+    print("-"*80)
+
+def get_valid_choice(prompt, valid_options):
+    while True:
+        try:
+            choice = input(prompt).strip()
+            if choice in valid_options:
+                return choice
+            print(f"Invalid choice. Please select from: {', '.join(valid_options)}")
+        except Exception as e:
+            print(f"Error: {e}. Please try again.")
+
+def log_outage_ui():
+    print("\n" + "="*80)
+    print("LOG NEW OUTAGE")
+    print("="*80)
+    try:
+        # Get date
         date = input("Enter date (YYYY-MM-DD): ").strip()
-        if not date: 
-            print("Date cannot be blank."); continue
+        if not date:
+            print("Error: Date cannot be blank.")
+            return
 
-        for i in range(len(create_area_list())):
-            print(f"{i+1}. {create_area_list()[i]}")
-        area = create_area_list()[int(input("Enter area number: "))-1].strip().title()
+        # Select area
+        areas = create_area_list()
+        print("\nSelect Area:")
+        for i, area in enumerate(areas, 1):
+            print(f"  {i}. {area}")
+        area_choice = int(input("Enter area number: ").strip())
+        if area_choice < 1 or area_choice > len(areas):
+            print("Invalid area selection.")
+            return
+        area = areas[area_choice - 1].strip().title()
 
-        stage = int(input("Enter stage (1-6): ").strip())
-        block = int(input(f"Enter block ({Stages['Blocks'][stage-1]}): ").strip())
+        # Select stage
+        print("\nSelect Stage:")
+        for i, stage_num in enumerate(Stages["Stage"], 1):
+            severity = Stages["Severity"][i-1]
+            blocks = Stages["Blocks"][i-1]
+            print(f"  {stage_num}. Stage {stage_num} - {severity:12} ({blocks})")
+        stage = int(input("Enter stage number (1-6): ").strip())
+        if stage < 1 or stage > 6:
+            print("Invalid stage selection.")
+            return
 
-        scheduled_start = input("Enter scheduled start time (HH:MM): ").strip()
-        scheduled_end = input("Enter scheduled end time (HH:MM): ").strip()
-        actual_start = input("Enter actual start time (HH:MM): ").strip()
-        actual_end = input("Enter actual end time (HH:MM): ").strip()
+        # Get block
+        block = int(input(f"Enter block number: ").strip())
+
+        # Get times
+        print("\nEnter Times (format HH:MM):")
+        scheduled_start = input("  Scheduled start time: ").strip()
+        scheduled_end = input("  Scheduled end time: ").strip()
+        actual_start = input("  Actual start time: ").strip()
+        actual_end = input("  Actual end time: ").strip()
+
+        # Get monitor name
         monitor = input("Enter monitor name: ").strip().title()
 
+        # Validate all fields
         if not all([scheduled_start, scheduled_end, actual_start, actual_end, monitor]):
-            print("All fields must be filled."); continue
+            print("Error: All fields must be filled.")
+            return
 
-        log_outage(date, area, block, stage,scheduled_start, scheduled_end,actual_start, actual_end, monitor)
+        log_outage(date, area, block, stage, scheduled_start, scheduled_end, actual_start, actual_end, monitor)
+    except ValueError:
+        print("Error: Invalid input format. Please try again.")
+    except Exception as e:
+        print(f"Error: {e}")
 
-    # View flagged logs
-    elif choice == "2":
-        print_all_flagged_logs(OutageLog)
-        print("1. Continue to main menu")
-        print("2. View Impact report for a flagged log")
-        print("3. Exit")
-        choice2 = input("Enter choice: ").strip()
+def view_flagged_logs_ui():
+    print("\n" + "="*80)
+    print("FLAGGED LOGS")
+    print("="*80)
+    print_all_flagged_logs(OutageLog)
+    
+    print("\n" + "-"*80)
+    print("Options:")
+    print("  1. Return to main menu")
+    print("  2. View impact report for a flagged log")
+    print("-"*80)
+    choice = get_valid_choice("Enter choice (1-2): ", ["1", "2"])
 
-        if choice2 == "1":
-            continue
-        elif choice2 == "2":
-            select_and_view_impact(OutageLog, ImpactReports, CommunityMembers)
-        elif choice2 == "3":
-            print("Exiting PowerWatchSA...")
-            break
-        else:
-            print("Invalid choice, returning to main menu.")
+    if choice == "2":
+        select_and_view_impact(OutageLog, ImpactReports, CommunityMembers)
 
+def view_block_summary_ui():
+    print("\n" + "="*80)
+    print("BLOCK SUMMARY")
+    print("="*80)
+    try:
+        areas = create_area_list()
+        print("\nSelect Area:")
+        for i, area in enumerate(areas, 1):
+            print(f"  {i}. {area}")
+        area_choice = int(input("Enter area number: ").strip())
+        if area_choice < 1 or area_choice > len(areas):
+            print("Invalid area selection.")
+            return
+        area = areas[area_choice - 1].strip().title()
 
-    # View block summary
-    elif choice == "3":
-        for i in range(len(create_area_list())):
-            print(f"{i+1}. {create_area_list()[i]}")
-        area = create_area_list()[int(input("Enter area number: "))-1].strip().title()
-
-        block = int(input("Enter block: ").strip())
+        block = int(input("Enter block number: ").strip())
         get_block_summary(area, block, OutageLog, ImpactReports, CommunityMembers)
+    except ValueError:
+        print("Error: Invalid input format. Please try again.")
+    except Exception as e:
+        print(f"Error: {e}")
 
-    # View financial losses
-    elif choice == "4":
-        print(f"Total financial loss: R{calculate_financial_loss(ImpactReports)}")
+def view_financial_losses_ui():
+    print("\n" + "="*80)
+    print("FINANCIAL IMPACT REPORT")
+    print("="*80)
+    total = calculate_financial_loss(ImpactReports)
+    print(f"\nTotal Financial Loss: R{total:,.2f}")
+    print("\nNote: This includes reported losses from affected members due to overruns.")
+
+def generate_complaint_report_ui():
+    print("\n" + "="*80)
+    print("COMPLAINT REPORT")
+    print("="*80)
+    generate_complaint_report(OutageLog, ImpactReports, CommunityMembers)
+
+# Main Menu Loop
+def main():
+    print_header()
     
-    # Generate complaint report
-    elif choice == "5":
-        generate_complaint_report(OutageLog, ImpactReports, CommunityMembers)
-    
-    # Exit
-    elif choice == "6":
-        print("Exiting PowerWatchSA...")
-        break
-    else:
-        print("Invalid choice, try again.")
+    while True:
+        print_main_menu()
+        choice = get_valid_choice("Enter choice (1-6): ", ["1", "2", "3", "4", "5", "6"])
+        
+        if choice == "1":
+            log_outage_ui()
+        elif choice == "2":
+            view_flagged_logs_ui()
+        elif choice == "3":
+            view_block_summary_ui()
+        elif choice == "4":
+            view_financial_losses_ui()
+        elif choice == "5":
+            generate_complaint_report_ui()
+        elif choice == "6":
+            print("\n" + "="*80)
+            print(" "*25 + "Thank you for using PowerWatchSA")
+            print(" "*30 + "Exiting application...")
+            print("="*80 + "\n")
+            break
+
+# Run the application
+if __name__ == "__main__":
+    main()
