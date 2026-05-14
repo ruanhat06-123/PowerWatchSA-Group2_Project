@@ -378,10 +378,10 @@ def log_outage_ui():
     print("1. Cancel and return to main menu")
     print("2. Continue to log a new outage")
     print("\n" + "="*80)
-    choice = get_valid_choice("Enter choice (1-2): ", ["1", "2"])
-    if choice == "1":
+    choice = int(input("Enter choice (1-2): "))
+    if choice == 1:
         return
-    if choice == "2":
+    if choice == 2:
         print("LOG NEW OUTAGE")
         print("="*80)
         try:
