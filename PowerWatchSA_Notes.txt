@@ -30,3 +30,314 @@ all after
 2. git add .
 3. git commit -m "Your changes"
 4. git push
+
+
+
+
+
+
+Pseudocode for PowerWatchSA
+START PROGRAM
+
+DEFINE data structures:
+    Stages = dictionary of loadshedding stages and attributes
+    CommunityMembers = dictionary of registered members
+    OutageLog = dictionary of outage records
+    ImpactReports = dictionary of impact reports
+
+-----------------------------------
+FUNCTIONS
+-----------------------------------
+
+FUNCTION create_area_list():
+    RETURN unique list of areas from CommunityMembers
+
+FUNCTION last_id(outage_logs):
+    RETURN last LogID in outage_logs
+
+FUNCTION count_logs(outage_logs):
+    RETURN number of LogIDs in outage_logs
+
+FUNCTION generate_log_id(outage_logs):
+    GET last LogID
+    INCREMENT numeric part
+    RETURN new LogID
+
+FUNCTION calculate_overrun(scheduled_start, scheduled_end, actual_start, actual_end):
+    CONVERT times to datetime
+    CALCULATE scheduled duration
+    CALCULATE actual duration
+    overrun = actual duration - scheduled duration
+    IF overrun > 0 THEN RETURN overrun ELSE RETURN 0
+
+FUNCTION to_time(time_str):
+    RETURN datetime object from HH:MM string
+
+FUNCTION validate_date(date_str):
+    TRY convert date_str to datetime (YYYY-MM-DD)
+    IF success RETURN True ELSE RETURN False
+
+FUNCTION log_outage(date, area, block, stage, scheduled_start, scheduled_end, actual_start, actual_end, monitor):
+    GENERATE new LogID
+    CALCULATE overrun
+    APPEND outage details to OutageLog
+    PRINT confirmation message
+    IF overrun > 30:
+        CALL flag_vulnerable_alerts(area, block, overrun)
+        PRINT alerts
+        CALL log_impact_report(log_id, area, block, ImpactReports, CommunityMembers)
+
+FUNCTION flag_vulnerable_alerts(area, block, overrun_minutes):
+    alerts = []
+    IF overrun_minutes > 30:
+        FOR each member in CommunityMembers:
+            IF member area == area AND block == block AND vulnerable != "None":
+                ADD alert message to alerts
+    RETURN alerts
+
+FUNCTION log_impact_report(log_id, area, block, impact_reports, community_members):
+    FOR each member in community_members:
+        IF member area == area AND block == block:
+            IF already logged for this log_id + member_id:
+                SKIP
+            DETERMINE impact_type and description:
+                IF vulnerable != "None": Medical impact
+                ELSE IF type == School: Education impact
+                ELSE IF type == SME or Spaza shop: Financial impact
+                ELSE SKIP
+            GENERATE new ImpactID
+            APPEND impact details to ImpactReports
+            PRINT confirmation
+
+FUNCTION get_block_summary(area, block, outage_logs, impact_reports, community_members):
+    PRINT header
+    FOR each outage in outage_logs:
+        IF outage area == area AND block == block AND overrun > 30:
+            FIND linked impacts in impact_reports
+            PRINT member name + description
+    IF none found PRINT "No affected members"
+
+FUNCTION calculate_financial_loss(impact_reports):
+    total_loss = 0
+    FOR each loss in impact_reports:
+        IF loss != "N/A":
+            ADD to total_loss
+    RETURN total_loss
+
+FUNCTION generate_complaint_report(outage_logs, impact_reports, community_members):
+    PRINT header
+    FOR each outage in outage_logs:
+        IF overrun > 30:
+            FIND linked impacts
+            PRINT member name + description
+    IF none found PRINT "No affected members"
+
+FUNCTION print_all_flagged_logs(outage_logs):
+    PRINT header
+    FOR each outage in outage_logs:
+        IF overrun > 30:
+            PRINT outage details
+    IF none found PRINT "No flagged logs"
+
+FUNCTION view_impact_report(log_id, outage_logs, impact_reports, community_members):
+    PRINT header
+    FOR each impact in impact_reports:
+        IF impact LogID == log_id:
+            PRINT member name + description
+    IF none found PRINT "No impact report"
+
+FUNCTION select_and_view_impact(outage_logs, impact_reports, community_members):
+    flagged_logs = all LogIDs with overrun > 30
+    IF none found PRINT "No flagged logs"
+    ELSE PRINT numbered list of flagged logs
+    ASK user to select number
+    DISPLAY impact report for selected log
+
+-----------------------------------
+USER INTERFACE FUNCTIONS
+-----------------------------------
+
+FUNCTION print_header():
+    PRINT PowerWatchSA title
+
+FUNCTION print_main_menu():
+    PRINT menu options (1–6)
+
+FUNCTION get_valid_choice(prompt, valid_options):
+    LOOP until user enters valid choice
+    RETURN choice
+
+FUNCTION log_outage_ui():
+    ASK user if they want to continue
+    IF yes:
+        LOOP until valid date entered (YYYY-MM-DD)
+        ASK user to select area
+        ASK user to select stage
+        ASK user to enter block
+        ASK user to enter times (HH:MM)
+        ASK user to enter monitor name
+        VALIDATE all fields
+        CALL log_outage()
+
+FUNCTION view_flagged_logs_ui():
+    PRINT flagged logs
+    ASK user if they want to view impact report
+    IF yes CALL select_and_view_impact()
+
+FUNCTION view_block_summary_ui():
+    ASK user to select area and block
+    CALL get_block_summary()
+
+FUNCTION view_financial_losses_ui():
+    CALCULATE total loss
+    PRINT result
+
+FUNCTION generate_complaint_report_ui():
+    CALL generate_complaint_report()
+
+-----------------------------------
+MAIN LOOP
+-----------------------------------
+
+FUNCTION main():
+    PRINT header
+    WHILE True:
+        PRINT main menu
+        GET user choice
+        IF choice == 1: CALL log_outage_ui()
+        IF choice == 2: CALL view_flagged_logs_ui()
+        IF choice == 3: CALL view_block_summary_ui()
+        IF choice == 4: CALL view_financial_losses_ui()
+        IF choice == 5: CALL generate_complaint_report_ui()
+        IF choice == 6: PRINT exit message; BREAK
+
+CALL main()
+
+END PROGRAM
+
+
+
+
+
+
+
+
+
+
+PowerWatchSA Flow Diagram
++-----------------------------+
+|        PowerWatchSA         |
+|  Loadshedding Impact System |
++-----------------------------+
+              |
+              v
++-----------------------------+
+|         MAIN MENU           |
+| 1. Log Outage               |
+| 2. View Flagged Logs        |
+| 3. View Block Summary       |
+| 4. View Financial Losses    |
+| 5. Complaint Report         |
+| 6. Exit                     |
++-----------------------------+
+              |
+              v
+   +-------------------+
+   | User selects option|
+   +-------------------+
+              |
+   -------------------------------
+   |             |               |
+   v             v               v
+Option 1      Option 2        Option 3
+(Log Outage) (Flagged Logs)  (Block Summary)
+   |             |               |
+   v             v               v
++-----------------------------+   +-----------------------------+
+| Validate Date (YYYY-MM-DD)  |   | Select Area & Block         |
+| Retry until correct format  |   | Show impacts if overruns>30 |
++-----------------------------+   +-----------------------------+
+   |                             |
+   v                             v
++-----------------------------+   +-----------------------------+
+| Enter Area, Stage, Block    |   | If none found, show message |
+| Enter Times (HH:MM)         |   +-----------------------------+
+| Enter Monitor Name          |
++-----------------------------+
+   |
+   v
++-----------------------------+
+| Log outage in OutageLog     |
+| Calculate overrun           |
+| If overrun >30:             |
+|   - Flag vulnerable alerts  |
+|   - Auto log impact report  |
++-----------------------------+
+   |
+   v
+Return to Main Menu
+
+-------------------------------
+Option 2 (Flagged Logs)
+-------------------------------
+   |
+   v
++-----------------------------+
+| Show all flagged logs       |
+| (Overrun >30 mins)          |
++-----------------------------+
+   |
+   v
++-----------------------------+
+| Submenu:                    |
+| 1. Return to Main Menu      |
+| 2. View Impact Report       |
++-----------------------------+
+   |
+   v
++-----------------------------+
+| If 2 selected:              |
+|   - Show list of flagged IDs|
+|   - User selects one        |
+|   - Display impact report   |
++-----------------------------+
+   |
+   v
+Return to Main Menu
+
+-------------------------------
+Option 4 (Financial Losses)
+-------------------------------
+   |
+   v
++-----------------------------+
+| Calculate total losses      |
+| from ImpactReports          |
++-----------------------------+
+   |
+   v
+Return to Main Menu
+
+-------------------------------
+Option 5 (Complaint Report)
+-------------------------------
+   |
+   v
++-----------------------------+
+| Generate report of all      |
+| overruns >30 mins           |
+| Show affected members       |
++-----------------------------+
+   |
+   v
+Return to Main Menu
+
+-------------------------------
+Option 6 (Exit)
+-------------------------------
+   |
+   v
++-----------------------------+
+| Print exit message          |
+| End program                 |
++-----------------------------+
