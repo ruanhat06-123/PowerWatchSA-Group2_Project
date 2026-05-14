@@ -338,7 +338,14 @@ def log_impact_report(log_id, area, block, impact_reports, community_members):
 
                 print(f"Impact logged: {community_members['Name'][i]} - {community_members['Vulnerable'][i]}")
 
-
+#Function to make sure that the date has been entered correctly
+def validate_date(date_str):
+    try:
+        # Try to parse the date
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
 
 
     
@@ -389,10 +396,15 @@ def log_outage_ui():
         print("="*80)
         try:
         # Get date
-            date = input("Enter date (YYYY-MM-DD): ").strip()
-            if not date:
-                print("Error: Date cannot be blank.")
-                return
+            # Keep asking until the user enters a valid date
+            while True:
+                date = input("Enter date (YYYY-MM-DD): ").strip()
+                if validate_date(date):
+                    break
+                else:
+                    print("Error: Date must be in format YYYY-MM-DD (e.g., 2025-04-01). Please try again.")
+
+
 
             # Select area
             areas = create_area_list()
