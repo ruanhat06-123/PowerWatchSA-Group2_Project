@@ -379,6 +379,9 @@ def log_outage_ui():
     print("2. Continue to log a new outage")
     print("\n" + "="*80)
     choice = int(input("Enter choice (1-2): "))
+    if choice < 1 or choice > 2:
+        print("Invalid choice. Returning to main menu.")
+        return
     if choice == 1:
         return
     if choice == 2:
