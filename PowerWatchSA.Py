@@ -375,61 +375,67 @@ def get_valid_choice(prompt, valid_options):
             print(f"Error: {e}. Please try again.")
 
 def log_outage_ui():
+    print("1. Cancel and return to main menu")
+    print("2. Continue to log a new outage")
     print("\n" + "="*80)
-    print("LOG NEW OUTAGE")
-    print("="*80)
-    try:
+    choice = get_valid_choice("Enter choice (1-2): ", ["1", "2"])
+    if choice == "1":
+        return
+    if choice == "2":
+        print("LOG NEW OUTAGE")
+        print("="*80)
+        try:
         # Get date
-        date = input("Enter date (YYYY-MM-DD): ").strip()
-        if not date:
-            print("Error: Date cannot be blank.")
-            return
+            date = input("Enter date (YYYY-MM-DD): ").strip()
+            if not date:
+                print("Error: Date cannot be blank.")
+                return
 
-        # Select area
-        areas = create_area_list()
-        print("\nSelect Area:")
-        for i, area in enumerate(areas, 1):
-            print(f"  {i}. {area}")
-        area_choice = int(input("Enter area number: ").strip())
-        if area_choice < 1 or area_choice > len(areas):
-            print("Invalid area selection.")
-            return
-        area = areas[area_choice - 1].strip().title()
+            # Select area
+            areas = create_area_list()
+            print("\nSelect Area:")
+            for i, area in enumerate(areas, 1):
+                print(f"  {i}. {area}")
+            area_choice = int(input("Enter area number: ").strip())
+            if area_choice < 1 or area_choice > len(areas):
+                print("Invalid area selection.")
+                return
+            area = areas[area_choice - 1].strip().title()
 
         # Select stage
-        print("\nSelect Stage:")
-        for i, stage_num in enumerate(Stages["Stage"], 1):
-            severity = Stages["Severity"][i-1]
-            blocks = Stages["Blocks"][i-1]
-            print(f"  {stage_num}. Stage {stage_num} - {severity:12} ({blocks})")
-        stage = int(input("Enter stage number (1-6): ").strip())
-        if stage < 1 or stage > 6:
-            print("Invalid stage selection.")
-            return
+            print("\nSelect Stage:")
+            for i, stage_num in enumerate(Stages["Stage"], 1):
+                severity = Stages["Severity"][i-1]
+                blocks = Stages["Blocks"][i-1]
+                print(f"  {stage_num}. Stage {stage_num} - {severity:12} ({blocks})")
+            stage = int(input("Enter stage number (1-6): ").strip())
+            if stage < 1 or stage > 6:
+                print("Invalid stage selection.")
+                return
 
         # Get block
-        block = int(input(f"Enter block number: ").strip())
+            block = int(input(f"Enter block number: ").strip())
 
         # Get times
-        print("\nEnter Times (format HH:MM):")
-        scheduled_start = input("  Scheduled start time: ").strip()
-        scheduled_end = input("  Scheduled end time: ").strip()
-        actual_start = input("  Actual start time: ").strip()
-        actual_end = input("  Actual end time: ").strip()
+            print("\nEnter Times (format HH:MM):")
+            scheduled_start = input("  Scheduled start time: ").strip()
+            scheduled_end = input("  Scheduled end time: ").strip()
+            actual_start = input("  Actual start time: ").strip()
+            actual_end = input("  Actual end time: ").strip()
 
         # Get monitor name
-        monitor = input("Enter monitor name: ").strip().title()
+            monitor = input("Enter monitor name: ").strip().title()
 
         # Validate all fields
-        if not all([scheduled_start, scheduled_end, actual_start, actual_end, monitor]):
-            print("Error: All fields must be filled.")
-            return
+            if not all([scheduled_start, scheduled_end, actual_start, actual_end, monitor]):
+                print("Error: All fields must be filled.")
+                return
 
-        log_outage(date, area, block, stage, scheduled_start, scheduled_end, actual_start, actual_end, monitor)
-    except ValueError:
-        print("Error: Invalid input format. Please try again.")
-    except Exception as e:
-        print(f"Error: {e}")
+            log_outage(date, area, block, stage, scheduled_start, scheduled_end, actual_start, actual_end, monitor)
+        except ValueError:
+            print("Error: Invalid input format. Please try again.")
+        except Exception as e:
+            print(f"Error: {e}")
 
 def view_flagged_logs_ui():
     print("\n" + "="*80)
